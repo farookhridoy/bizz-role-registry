@@ -63,6 +63,13 @@ class RoleRegistry
         'primary_user' => ['Primary user', 'Primary users of a project.'],
     ];
 
+    /**
+     * Keys that LIMIT what a user sees ("only my own requisitions"). A Super Admin never counts as holding these,
+     * even when the account also carries the role, so the limit is not applied to them. Every other key is treated
+     * as held by a Super Admin (see hasOrSuper()).
+     */
+    public const RESTRICTIVE = ['employee', 'purchase_employee', 'primary_user'];
+
     /** @var array<string,string[]> per-process cache of key => bound role names */
     private static array $bound = [];
 
@@ -121,6 +128,36 @@ class RoleRegistry
     public function has(?object $user, string|array $keysOrNames): bool
     {
         return $user !== null && $user->hasAnyRole($this->namesFor($keysOrNames));
+    }
+
+    public function isSuperAdmin(?object $user): bool
+    {
+        return $this->has($user, 'super_admin');
+    }
+
+    /**
+     * Like has(), but a Super Admin passes every role check except those that only ask for limiting roles
+     * (RESTRICTIVE), which are false for them. Mixed lists pass (`['employee', 'department_head']` -> true).
+     * Use for "may this user do X" and "is this screen open to them" checks, not for "who is this person" ones.
+     *
+     * @param  string|string[]  $keysOrNames
+     */
+    public function hasOrSuper(?object $user, string|array $keysOrNames): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        if (! $this->isSuperAdmin($user)) {
+            return $this->has($user, $keysOrNames);
+        }
+        foreach ((array) $keysOrNames as $k) {
+            $key = isset(self::DEFAULTS[$k]) ? $k : $this->keyFor($k);
+            if (! in_array($key, self::RESTRICTIVE, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Users holding any role bound to the key(s). */
