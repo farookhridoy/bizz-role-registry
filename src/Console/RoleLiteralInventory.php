@@ -25,7 +25,7 @@ class RoleLiteralInventory extends Command
         '@role blade' => '/@(?:role|hasrole|hasanyrole)\(\s*[\'"]([^\'"]+)[\'"]/i',
         'User::role' => '/::role\(\s*(\[[^\]]*\]|[\'"][^\'"]+[\'"])/',
         'getManagerInfo' => '/getManagerInfo\(\s*[\'"]([^\'"]+)[\'"]/',
-        'Role::where name' => '/Role::where\(\s*[\'"]name[\'"]\s*,\s*[\'"]([^\'"]+)[\'"]/',
+        'Role::where name' => '/Role::where\(\s*[\'"]name[\'"]\s*,\s*[\'"](?!(?:=|!=|<>|like)[\'"])([^\'"]+)[\'"]/i',
     ];
 
     public function handle(): int
