@@ -40,6 +40,29 @@ class RoleRegistry
         'primary_user' => ['Primary-User'],
     ];
 
+    /** key => [label, what it controls] - shown on the bindings admin screen */
+    public const DESCRIPTIONS = [
+        'super_admin' => ['Super Admin', 'Full access (the permission gate lets this role through everything). Protected: bind it only from the command line.'],
+        'employee' => ['Employee', 'Ordinary requesters; sees only their own requisitions and records.'],
+        'department_head' => ['Department head', 'First approver of a department: gets requisition approval notifications, sees the department\'s requisitions, can acknowledge or forward them.'],
+        'sbu_head' => ['SBU head', 'Second approval level above department heads; notified when a department head sends a requisition up.'],
+        'management' => ['Management', 'Final approvers: requisitions forwarded by department heads, CS and billing approvals.'],
+        'purchase_department' => ['Purchase department', 'Procurement owners: receive purchase notifications, create RFP/CS/PO, see all purchasing lists.'],
+        'purchase_employee' => ['Purchase employee', 'Procurement staff working on assigned requisitions (their CS is sent to the purchase department first).'],
+        'store_manager' => ['Store manager', 'Store/inventory owners: receive GRN, QC and delivery notifications; see store requisitions.'],
+        'store_department' => ['Store department', 'Store staff.'],
+        'accounts' => ['Accounts', 'Finance: payments, advances, ledgers, finance approvals and notifications.'],
+        'billing' => ['Billing', 'Billing/audit flow: invoices and PO billing.'],
+        'audit' => ['Audit', 'Audit step of the billing flow.'],
+        'gate_permission' => ['Gate permission', 'Gate pass / goods-received entry at the gate.'],
+        'quality_ensure' => ['Quality ensure', 'Quality control approvals and returns.'],
+        'pmo' => ['PMO', 'Project management office (projects module).'],
+        'pm' => ['Project manager', 'Project managers (projects module).'],
+        'sponsor' => ['Sponsor', 'Project sponsors (projects module).'],
+        'project_board' => ['Project board', 'Project board members (projects module).'],
+        'primary_user' => ['Primary user', 'Primary users of a project.'],
+    ];
+
     /** @var array<string,string[]> per-process cache of key => bound role names */
     private static array $bound = [];
 
