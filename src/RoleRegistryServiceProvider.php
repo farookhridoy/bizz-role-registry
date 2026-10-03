@@ -14,6 +14,10 @@ class RoleRegistryServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([Console\RoleLiteralInventory::class, Console\RoleBindings::class]);
+        }
+
         if (config('role-registry.load_migrations')) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
