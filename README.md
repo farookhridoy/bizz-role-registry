@@ -1,5 +1,7 @@
 # bizzsol/role-registry
 
+> Release notes: `CHANGELOG.md`. Suite guidebook: `erp-main-v11/docs/handover/`.
+
 Code asks for a **functional key** (`department_head`, `store_manager`, `purchase_department` ...), never for a role *name*.
 `role_bindings` maps a key to one or more roles, so a role created later only has to be **bound** to take part everywhere the key is used.
 
