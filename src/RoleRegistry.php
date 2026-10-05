@@ -29,6 +29,9 @@ class RoleRegistry
         'store_manager' => ['Store-Manager'],
         'store_department' => ['Store-Department'],
         'accounts' => ['Accounts'],
+        'accounts_requester' => ['Accounts-Requester'],
+        'accounts_assessment' => ['Accounts-Assessment'],
+        'accounts_reviewer' => ['Accounts-Reviewer'],
         'billing' => ['Billing'],
         'audit' => ['Audit'],
         'gate_permission' => ['Gate Permission'],
@@ -52,6 +55,9 @@ class RoleRegistry
         'store_manager' => ['Store manager', 'Store/inventory owners: receive GRN, QC and delivery notifications; see store requisitions.'],
         'store_department' => ['Store department', 'Store staff.'],
         'accounts' => ['Accounts', 'Finance: payments, advances, ledgers, finance approvals and notifications.'],
+        'accounts_requester' => ['Accounts requester', 'First step of the finance accounts approval chain: raises the voucher / entry for assessment.'],
+        'accounts_assessment' => ['Accounts assessment', 'Second step of the finance accounts chain: assesses the entry the requester raised.'],
+        'accounts_reviewer' => ['Accounts reviewer', 'Third step of the finance accounts chain: reviews the assessed entry before final accounts approval.'],
         'billing' => ['Billing', 'Billing/audit flow: invoices and PO billing.'],
         'audit' => ['Audit', 'Audit step of the billing flow.'],
         'gate_permission' => ['Gate permission', 'Gate pass / goods-received entry at the gate.'],
@@ -164,6 +170,43 @@ class RoleRegistry
     public function users(string|array $keysOrNames): Builder
     {
         return ($this->userModel())::role($this->namesFor($keysOrNames));
+    }
+
+    /**
+     * ONE recipient for a role key, by org hierarchy (most specific first):
+     *   1. holder whose user_priorities row matches unit AND department   (only when a department is given)
+     *   2. holder whose user_priorities row matches the unit
+     *   3. holder who belongs to the company (user_companies)             (only when a company is given)
+     * Ties are broken by the lowest user id, so the result is stable. Returns null when nobody matches - the caller
+     * decides (approval-matrix step, escalate, or tell the actor); it never falls back to "any holder anywhere".
+     *
+     * @param  string|string[]  $keysOrNames
+     * @param  array{company_id?:?int,unit_id?:?int,department_id?:?int}  $scope
+     */
+    public function recipient(string|array $keysOrNames, array $scope = []): ?int
+    {
+        $ids = $this->users($keysOrNames)->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        if ($ids === []) {
+            return null;
+        }
+
+        $unit = (int) ($scope['unit_id'] ?? 0);
+        $dept = (int) ($scope['department_id'] ?? 0);
+        $company = (int) ($scope['company_id'] ?? 0);
+
+        $priority = fn () => DB::table('user_priorities')->whereIn('user_id', $ids)->whereNull('deleted_at')->orderBy('user_id');
+        $found = null;
+        if ($unit && $dept) {
+            $found = $priority()->where('hr_unit_id', $unit)->where('hr_department_id', $dept)->value('user_id');
+        }
+        if (! $found && $unit) {
+            $found = $priority()->where('hr_unit_id', $unit)->value('user_id');
+        }
+        if (! $found && $company) {
+            $found = DB::table('user_companies')->whereIn('user_id', $ids)->where('company_id', $company)->whereNull('deleted_at')->orderBy('user_id')->value('user_id');
+        }
+
+        return $found ? (int) $found : null;
     }
 
     public function bind(string $key, int $roleId): void
